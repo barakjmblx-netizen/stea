@@ -3,7 +3,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -65,7 +64,7 @@ local function setupBypass()
     if bypassActive then return end
     bypassActive = true
 
-    -- Hook __index to fake no collision on walls
+    -- Hook __index to fake no collision and invisibility on walls
     originalMT.__index = newcclosure(function(self, key)
         if hackActive and self:IsA("BasePart") and key == "CanCollide" and self.Parent and not self.Parent:IsDescendantOf(Character) then
             return false -- Fake walls as non-collidable for player
@@ -94,7 +93,7 @@ local function setupBypass()
         return oldNamecall(self, ...)
     end)
 
-    -- Heartbeat loop for position adjustment and visual fake
+    -- Heartbeat loop for position adjustment
     connections.hackLoop = RunService.Heartbeat:Connect(function()
         if hackActive and Character and HumanoidRootPart then
             for _, part in pairs(Character:GetChildren()) do
@@ -119,10 +118,9 @@ local function toggleLaserFake()
                     fakeLaser.Transparency = 1
                     fakeLaser.CanCollide = false
                     fakeLaser.Parent = part.Parent
-                    -- Fake visual removal (override appearance)
-                    local surfaceAppearance = Instance.new("SurfaceAppearance")
-                    surfaceAppearance.Color = Color3.fromRGB(0, 0, 0)
-                    surfaceAppearance.Parent = fakeLaser
+                    -- Fake visual removal (remove material/shadows)
+                    fakeLaser.Material = Enum.Material.SmoothPlastic
+                    fakeLaser.CastShadow = false
                     -- Tween to simulate "open"
                     local tween = TweenService:Create(fakeLaser, TweenInfo.new(0.3), {Transparency = 0.9})
                     tween:Play()
@@ -180,4 +178,4 @@ LocalPlayer.CharacterAdded:Connect(function(newChar)
     end
 end)
 
-print("Brainrot Hack Menu loaded - Ready for Xeno Executor.")
+print("Brainrot Hack Menu loaded - Clean for Xeno Executor.")
