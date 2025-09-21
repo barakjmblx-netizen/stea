@@ -1,8 +1,9 @@
--- Brainrot No-Clip & Laser Bypass Menu (Lua for Steal Brainrot, No CoreModule, 2025 Anti-Cheat Proof)
+
+-- Brainrot No-Clip & Laser Fake Menu (Lua for Roblox, Xeno Executor, 2025 Anti-Cheat Bypass)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -13,11 +14,10 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "BrainrotMenu"
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = true
 
 -- Draggable Frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 160, 0, 120)
+frame.Size = UDim2.new(0, 160, 0, 80)
 frame.Position = UDim2.new(0, 50, 0, 50)
 frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 frame.BackgroundTransparency = 0.2
@@ -38,189 +38,146 @@ title.Font = Enum.Font.SourceSansBold
 title.TextSize = 16
 title.Parent = frame
 
--- No-Clip Toggle Button
-local noclipButton = Instance.new("TextButton")
-noclipButton.Size = UDim2.new(1, -10, 0, 35)
-noclipButton.Position = UDim2.new(0, 5, 0, 30)
-noclipButton.Text = "Wall Bypass OFF"
-noclipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-noclipButton.BackgroundColor3 = Color3.fromRGB(255, 7, 58) -- Red off
-noclipButton.Font = Enum.Font.SourceSans
-noclipButton.TextSize = 14
-noclipButton.Parent = frame
-
--- Laser Door Bypass Button
-local laserButton = Instance.new("TextButton")
-laserButton.Size = UDim2.new(1, -10, 0, 35)
-laserButton.Position = UDim2.new(0, 5, 0, 70)
-laserButton.Text = "Laser Fake OFF"
-laserButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-laserButton.BackgroundColor3 = Color3.fromRGB(255, 7, 58) -- Red off
-laserButton.Font = Enum.Font.SourceSans
-laserButton.TextSize = 14
-laserButton.Parent = frame
+-- Unified No-Clip & Laser Fake Button
+local hackButton = Instance.new("TextButton")
+hackButton.Size = UDim2.new(1, -10, 0, 35)
+hackButton.Position = UDim2.new(0, 5, 0, 30)
+hackButton.Text = "No-Clip & Laser OFF"
+hackButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+hackButton.BackgroundColor3 = Color3.fromRGB(255, 7, 58) -- Red off
+hackButton.Font = Enum.Font.SourceSans
+hackButton.TextSize = 14
+hackButton.Parent = frame
 
 -- Variables
-local noClipActive = false
-local laserActive = false
+local hackActive = false
+local originalMT = getrawmetatable(game)
+local oldIndex = originalMT.__index
+local oldNamecall = originalMT.__namecall
 local connections = {}
+local fakeLasers = {}
 
--- Anti-Detect Hook Setup (No CoreModule, Enhanced for Steal Brainrot)
-local function setupNoClipBypass()
-    local mt = getrawmetatable(game)
-    setreadonly(mt, false)
-    local oldIndex = mt.__index
-    local oldNamecall = mt.__namecall
+-- Anti-Cheat Bypass Setup
+setreadonly(originalMT, false)
+local bypassActive = false
 
-    -- Hook __index to fake no collision
-    mt.__index = newcclosure(function(self, key)
-        if noClipActive and self:IsA("BasePart") and key == "CanCollide" and self.Parent and not self.Parent:IsDescendantOf(Character) then
-            return false -- Fake walls as non-collidable
+local function setupBypass()
+    if bypassActive then return end
+    bypassActive = true
+
+    -- Hook __index to fake no collision on walls
+    originalMT.__index = newcclosure(function(self, key)
+        if hackActive and self:IsA("BasePart") and key == "CanCollide" and self.Parent and not self.Parent:IsDescendantOf(Character) then
+            return false -- Fake walls as non-collidable for player
+        elseif hackActive and self:IsA("BasePart") and key == "Transparency" and self.Parent and not self.Parent:IsDescendantOf(Character) then
+            return 1 -- Make walls invisible to player only
         end
         return oldIndex(self, key)
     end)
 
-    -- Hook __namecall to bypass Raycast/Touched
-    mt.__namecall = newcclosure(function(self, ...)
+    -- Hook __namecall to ignore Touched/Raycast on walls and lasers
+    originalMT.__namecall = newcclosure(function(self, ...)
         local method = getnamecallmethod()
         local args = {...}
-        if noClipActive and method == "Raycast" and self == Workspace then
+        if hackActive and method == "Touched" and self:IsA("BasePart") and self.Parent and not self.Parent:IsDescendantOf(Character) then
+            return -- Ignore wall/laser touches
+        elseif hackActive and method == "Raycast" and self:IsA("Workspace") then
             local rayOrigin = args[1]
             local rayDirection = args[2]
-            if (rayOrigin - HumanoidRootPart.Position).Magnitude < 20 then -- Wider range for Steal Brainrot
-                local hit = Workspace:Raycast(rayOrigin, rayDirection)
+            if (rayOrigin - HumanoidRootPart.Position).Magnitude < 10 then -- Player's ray
+                local hit = workspace:Raycast(rayOrigin, rayDirection)
                 if hit and hit.Instance and hit.Instance:IsA("BasePart") and not hit.Instance.Parent:IsDescendantOf(Character) then
-                    return nil -- Fake no wall hit
+                    return nil -- Fake no hit on walls/lasers
                 end
             end
-        elseif noClipActive and method == "Touched" and self:IsA("BasePart") and not self.Parent:IsDescendantOf(Character) then
-            return -- Ignore wall touches
         end
         return oldNamecall(self, ...)
     end)
 
-    -- Heartbeat for player positioning (avoid teleport detection)
-    connections.noclipLoop = RunService.Heartbeat:Connect(function()
-        if noClipActive and Character and HumanoidRootPart then
+    -- Heartbeat loop for position adjustment and visual fake
+    connections.hackLoop = RunService.Heartbeat:Connect(function()
+        if hackActive and Character and HumanoidRootPart then
             for _, part in pairs(Character:GetChildren()) do
                 if part:IsA("BasePart") and part ~= HumanoidRootPart then
-                    part.CanCollide = false -- Player parts only
+                    part.CanCollide = false -- Player parts non-collidable
                 end
             end
-            HumanoidRootPart.Velocity = Vector3.new(0, 0, 0) -- Mask movement
-            HumanoidRootPart.CFrame = HumanoidRootPart.CFrame + Vector3.new(0, 0.01, 0) -- Subtle nudge to bypass stuck checks
+            HumanoidRootPart.Velocity = Vector3.new(0, 0, 0) -- Avoid teleport detect
         end
     end)
 end
 
--- No-Clip Toggle Logic
-local function toggleNoClip()
-    noClipActive = not noClipActive
-    if noClipActive then
-        noclipButton.BackgroundColor3 = Color3.fromRGB(57, 255, 20) -- Green on
-        noclipButton.Text = "Wall Bypass ON"
-        setupNoClipBypass()
-        print("Wall Bypass ON: Game thinks walls are gone for you.")
-    else
-        noclipButton.BackgroundColor3 = Color3.fromRGB(255, 7, 58) -- Red off
-        noclipButton.Text = "Wall Bypass OFF"
-        if connections.noclipLoop then
-            connections.noclipLoop:Disconnect()
-        end
-        for _, part in pairs(Character:GetChildren()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = true
-            end
-        end
-        print("Wall Bypass OFF: Collisions back to normal.")
-    end
-end
-
-noclipButton.MouseButton1Click:Connect(toggleNoClip)
-
--- Laser Door Fake Logic (Steal Brainrot Specific)
+-- Laser Fake Logic (Make lasers appear gone for player, but exist for anti-cheat)
 local function toggleLaserFake()
-    laserActive = not laserActive
-    if laserActive then
-        laserButton.BackgroundColor3 = Color3.fromRGB(57, 255, 20) -- Green on
-        laserButton.Text = "Laser Fake ON"
-        -- Scan for laser-like objects (Steal Brainrot often uses "LaserWall" or "Beam")
-        local laserParts = {}
-        for _, part in pairs(Workspace:GetDescendants()) do
-            if part:IsA("BasePart") and (part.Name:lower():match("laser") or part.Name:lower():match("wall") or part:FindFirstChildOfClass("Beam")) then
-                table.insert(laserParts, part)
-            end
-        end
-        if #laserParts > 0 then
-            for _, laser in pairs(laserParts) do
-                -- Create fake laser (invisible, non-collidable)
-                local fakeLaser = laser:Clone()
-                fakeLaser.Name = laser.Name .. "_BrainrotFake"
-                fakeLaser.Transparency = 1
-                fakeLaser.CanCollide = false
-                fakeLaser.Parent = laser.Parent
-                -- Tween to fake "open" state
-                local tween = TweenService:Create(fakeLaser, TweenInfo.new(0.4), {Transparency = 0.6})
-                tween:Play()
-                -- Redirect original touch to avoid triggers
-                laser.Touched:Connect(function(hit)
-                    if hit.Parent == Character then
-                        return -- No trigger for player
-                    end
-                end)
-                -- Fake server-side check (mimic open state)
-                if laser:FindFirstChild("State") then
-                    laser.State.Value = true -- Fake "open" if game uses state
+    if hackActive then
+        -- Create fake lasers (invisible, non-collidable)
+        for _, part in pairs(workspace:GetDescendants()) do
+            if part:IsA("BasePart") and (part.Name:lower():match("laser") or part.Name:lower():match("beam")) then
+                if not fakeLasers[part] then
+                    local fakeLaser = part:Clone()
+                    fakeLaser.Name = "FakeLaser_" .. part.Name
+                    fakeLaser.Transparency = 1
+                    fakeLaser.CanCollide = false
+                    fakeLaser.Parent = part.Parent
+                    -- Fake visual removal (override appearance)
+                    local surfaceAppearance = Instance.new("SurfaceAppearance")
+                    surfaceAppearance.Color = Color3.fromRGB(0, 0, 0)
+                    surfaceAppearance.Parent = fakeLaser
+                    -- Tween to simulate "open"
+                    local tween = TweenService:Create(fakeLaser, TweenInfo.new(0.3), {Transparency = 0.9})
+                    tween:Play()
+                    fakeLasers[part] = fakeLaser
+                    -- Redirect Touched to fake
+                    part.Touched:Connect(function(hit)
+                        if hit.Parent == Character then
+                            return -- No trigger for player
+                        end
+                    end)
                 end
             end
-            print("Laser Fake ON: Fake lasers up, walk through like a ghost.")
-        else
-            print("No lasers found. Check Workspace for 'LaserWall' or 'Beam' objects.")
         end
+        print("Lasers faked: Appear gone, pass through enabled.")
     else
-        laserButton.BackgroundColor3 = Color3.fromRGB(255, 7, 58) -- Red off
-        laserButton.Text = "Laser Fake OFF"
-        -- Clean up fakes
-        for _, part in pairs(Workspace:GetDescendants()) do
-            if part.Name:match("_BrainrotFake") then
-                part:Destroy()
-            end
+        -- Remove fake lasers
+        for _, fake in pairs(fakeLasers) do
+            if fake then fake:Destroy() end
         end
-        print("Laser Fake OFF: Fakes cleared.")
+        fakeLasers = {}
+        print("Lasers restored: Anti-cheat sees them again.")
     end
 end
 
-laserButton.MouseButton1Click:Connect(toggleLaserFake)
+-- Unified No-Clip & Laser Fake Toggle
+local function toggleHack()
+    hackActive = not hackActive
+    if hackActive then
+        hackButton.BackgroundColor3 = Color3.fromRGB(57, 255, 20) -- Green on
+        hackButton.Text = "No-Clip & Laser ON"
+        setupBypass()
+        toggleLaserFake()
+        print("No-Clip & Laser Fake enabled: Walls/lasers invisible and passable.")
+    else
+        hackButton.BackgroundColor3 = Color3.fromRGB(255, 7, 58) -- Red off
+        hackButton.Text = "No-Clip & Laser OFF"
+        if connections.hackLoop then
+            connections.hackLoop:Disconnect()
+        end
+        toggleLaserFake()
+        print("No-Clip & Laser Fake disabled.")
+    end
+end
 
--- Handle Character Respawn
+hackButton.MouseButton1Click:Connect(toggleHack)
+
+-- Character Respawn Handler
 LocalPlayer.CharacterAdded:Connect(function(newChar)
     Character = newChar
     HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
-    if noClipActive then
-        wait(0.5)
-        toggleNoClip()
-        toggleNoClip()
-    end
-    if laserActive then
-        wait(0.5)
-        toggleLaserFake()
-        toggleLaserFake()
+    if hackActive then
+        wait(1)
+        toggleHack()
+        toggleHack()
     end
 end)
 
--- Anti-Cheat Evasion (Extra Layer for Steal Brainrot)
-local function antiCheatEvasion()
-    -- Spoof client properties to dodge detection
-    local mt = getrawmetatable(game)
-    setreadonly(mt, false)
-    mt.__index = newcclosure(function(self, key)
-        if key == "Parent" or key == "Locked" then
-            return nil -- Hide suspicious access
-        end
-        return rawget(self, key)
-    end)
-    setreadonly(mt, true)
-end
-antiCheatEvasion()
-
-print("Brainrot Menu loaded - No CoreModule, Steal Brainrot anti-cheat bypassed.")
+print("Brainrot Hack Menu loaded - Ready for Xeno Executor.")
