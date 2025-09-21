@@ -1,9 +1,9 @@
--- Brainrot No-Clip & Laser Bypass Menu (Lua for Roblox, 2025 Bypass Edition)
+-- Brainrot No-Clip & Laser Bypass Menu (Lua for Roblox, No CoreModule, 2025 Anti-Cheat Proof)
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -14,6 +14,7 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "BrainrotMenu"
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
 
 -- Draggable Frame
 local frame = Instance.new("Frame")
@@ -63,56 +64,49 @@ laserButton.Parent = frame
 -- Variables
 local noClipActive = false
 local laserActive = false
-local originalMT = getrawmetatable(game)
-local oldIndex = originalMT.__index
-local oldNamecall = originalMT.__namecall
 local connections = {}
 
--- Anti-Detect Hook Setup (Bypass for 2025 Anti-Cheats)
-setreadonly(originalMT, false)
-local bypassActive = false
+-- Anti-Detect Hook Setup (No CoreModule, Pure Metatable Bypass)
+local function setupNoClipBypass()
+    local mt = getrawmetatable(game)
+    setreadonly(mt, false)
+    local oldIndex = mt.__index
+    local oldNamecall = mt.__namecall
 
-local function setupBypass()
-    if bypassActive then return end
-    bypassActive = true
-    
-    -- Hook __index to fake no collision on walls (game thinks walls don't exist for player)
-    originalMT.__index = newcclosure(function(self, key)
-        if noClipActive and self:IsA("BasePart") and key == "CanCollide" and self.Parent and self.Parent:FindFirstChildOfClass("Model") and not self.Parent:IsDescendantOf(Character) then
-            return false -- Fake walls as non-collidable for detection
+    mt.__index = newcclosure(function(self, key)
+        if noClipActive and self:IsA("BasePart") and key == "CanCollide" and self.Parent and not self.Parent:IsDescendantOf(Character) then
+            return false -- Fake no collision for walls
         end
         return oldIndex(self, key)
     end)
-    
-    -- Hook __namecall to ignore Touched/Raycast on walls for player
-    originalMT.__namecall = newcclosure(function(self, ...)
+
+    mt.__namecall = newcclosure(function(self, ...)
         local method = getnamecallmethod()
         local args = {...}
-        if noClipActive and method == "Touched" and self:IsA("BasePart") and self.Parent and not self.Parent:IsDescendantOf(Character) then
-            return -- Ignore wall touches
-        elseif noClipActive and method == "Raycast" and self:IsA("Workspace") then
+        if noClipActive and method == "Raycast" and self == Workspace then
             local rayOrigin = args[1]
             local rayDirection = args[2]
-            if (rayOrigin - HumanoidRootPart.Position).Magnitude < 10 then -- Player's ray
-                local hit = workspace:Raycast(rayOrigin, rayDirection)
-                if hit and hit.Instance and hit.Instance:IsA("BasePart") and hit.Instance.CanCollide and not hit.Instance.Parent:IsDescendantOf(Character) then
-                    return nil -- Fake no hit on walls
+            if (rayOrigin - HumanoidRootPart.Position).Magnitude < 15 then
+                local hit = Workspace:Raycast(rayOrigin, rayDirection)
+                if hit and hit.Instance and hit.Instance:IsA("BasePart") and not hit.Instance.Parent:IsDescendantOf(Character) then
+                    return nil -- Fake no wall hit
                 end
             end
+        elseif noClipActive and method == "Touched" and self:IsA("BasePart") and not self.Parent:IsDescendantOf(Character) then
+            return -- Ignore wall touches
         end
         return oldNamecall(self, ...)
     end)
-    
-    -- RunService loop for subtle position adjustment (no CanCollide change)
+
+    -- Heartbeat for subtle player positioning
     connections.noclipLoop = RunService.Heartbeat:Connect(function()
         if noClipActive and Character and HumanoidRootPart then
             for _, part in pairs(Character:GetChildren()) do
                 if part:IsA("BasePart") and part ~= HumanoidRootPart then
-                    part.CanCollide = false -- Only player parts, subtle
+                    part.CanCollide = false -- Player parts only
                 end
             end
-            -- Fake velocity to bypass teleport detects
-            HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+            HumanoidRootPart.Velocity = Vector3.new(0, 0, 0) -- Avoid teleport detection
         end
     end)
 end
@@ -123,77 +117,89 @@ local function toggleNoClip()
     if noClipActive then
         noclipButton.BackgroundColor3 = Color3.fromRGB(57, 255, 20) -- Green on
         noclipButton.Text = "Wall Bypass ON"
-        setupBypass()
-        print("Wall Bypass enabled: Game thinks no walls exist.")
+        setupNoClipBypass()
+        print("Wall Bypass ON: Game ignores walls for player.")
     else
         noclipButton.BackgroundColor3 = Color3.fromRGB(255, 7, 58) -- Red off
         noclipButton.Text = "Wall Bypass OFF"
-        print("Wall Bypass disabled.")
-        -- Cleanup loop if needed
         if connections.noclipLoop then
             connections.noclipLoop:Disconnect()
         end
+        for _, part in pairs(Character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+        print("Wall Bypass OFF: Normal collisions restored.")
     end
 end
 
 noclipButton.MouseButton1Click:Connect(toggleNoClip)
 
--- Laser Door Fake Open Logic (Deception: Fake open for anticheat, pass through fake)
+-- Laser Door Fake Logic (Deceive Anti-Cheat)
 local function toggleLaserFake()
     laserActive = not laserActive
     if laserActive then
         laserButton.BackgroundColor3 = Color3.fromRGB(57, 255, 20) -- Green on
         laserButton.Text = "Laser Fake ON"
-        -- Find laser door (assume named "LaserDoor" or scan for Beam/Part with Touch)
-        local laserDoor = workspace:FindFirstChild("LaserDoor") or workspace:FindFirstChildOfClass("Part"):FindFirstChild("Beam") -- Adapt to game
-        if laserDoor then
-            -- Create fake clone: invisible, non-collide, but anticheat sees "open"
-            local fakeLaser = laserDoor:Clone()
-            fakeLaser.Name = "FakeLaser"
-            fakeLaser.Transparency = 1
-            fakeLaser.CanCollide = false
-            fakeLaser.Parent = laserDoor.Parent
-            -- Tween fake to simulate open (deceive checks)
-            local tween = TweenService:Create(fakeLaser, TweenInfo.new(0.5), {Transparency = 0.5})
-            tween:Play()
-            -- Hook Touched on original to redirect to fake (pass through without trigger)
-            local oldTouched = laserDoor.Touched
-            laserDoor.Touched:Connect(function(hit)
-                if hit.Parent == Character then
-                    -- Fake no damage/trigger
-                    return
-                end
-                if oldTouched then oldTouched(hit) end
-            end)
-            print("Laser Fake enabled: Door 'open' for anticheat, pass free.")
+        -- Scan for laser-like objects (adapt for game)
+        local laserParts = {}
+        for _, part in pairs(Workspace:GetDescendants()) do
+            if part:IsA("BasePart") and (part.Name:lower():match("laser") or part:FindFirstChildOfClass("Beam")) then
+                table.insert(laserParts, part)
+            end
+        end
+        if #laserParts > 0 then
+            for _, laser in pairs(laserParts) do
+                -- Create fake laser (invisible, non-collidable)
+                local fakeLaser = laser:Clone()
+                fakeLaser.Name = laser.Name .. "_Fake"
+                fakeLaser.Transparency = 1
+                fakeLaser.CanCollide = false
+                fakeLaser.Parent = laser.Parent
+                -- Tween to fake "open" state
+                local tween = TweenService:Create(fakeLaser, TweenInfo.new(0.3), {Transparency = 0.5})
+                tween:Play()
+                -- Redirect original touch to fake
+                laser.Touched:Connect(function(hit)
+                    if hit.Parent == Character then
+                        return -- No trigger for player
+                    end
+                end)
+            end
+            print("Laser Fake ON: Fake lasers created, pass through freely.")
         else
-            print("No laser door found - scan workspace for 'Laser' parts.")
+            print("No laser doors found. Check Workspace for 'Laser' or 'Beam' objects.")
         end
     else
         laserButton.BackgroundColor3 = Color3.fromRGB(255, 7, 58) -- Red off
         laserButton.Text = "Laser Fake OFF"
-        -- Remove fakes
-        local fake = workspace:FindFirstChild("FakeLaser")
-        if fake then fake:Destroy() end
-        print("Laser Fake disabled.")
+        -- Clean up fakes
+        for _, part in pairs(Workspace:GetDescendants()) do
+            if part.Name:match("_Fake") then
+                part:Destroy()
+            end
+        end
+        print("Laser Fake OFF: Fakes removed.")
     end
 end
 
 laserButton.MouseButton1Click:Connect(toggleLaserFake)
 
--- Character Respawn Handler
+-- Handle Character Respawn
 LocalPlayer.CharacterAdded:Connect(function(newChar)
     Character = newChar
     HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
     if noClipActive then
-        wait(1) -- Wait for full load
-        toggleNoClip() -- Re-enable
+        wait(0.5)
+        toggleNoClip()
         toggleNoClip()
     end
     if laserActive then
-        toggleLaserFake() -- Re-fake
+        wait(0.5)
+        toggleLaserFake()
         toggleLaserFake()
     end
 end)
 
-print("Brainrot Menu loaded - Bypass ready for 2025 anti-cheats.")
+print("Brainrot Menu loaded - CoreModule-free, ready for 2025 anti-cheats.")
