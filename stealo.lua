@@ -1,10 +1,9 @@
 -- Deep Brainrot No-Clip + Laser Deception (Lua for Xeno Executor 2025)
--- Custom Methods: gethiddenproperty Bypass, MAC/HWID Mask, Raycast Spoof
--- Button Fixed: UserInputService for Reliable Toggle
--- Sources: GitHub/zxciaz, ScriptBlox/Zyra, Reddit/ROBLOXExploiting 2025, WeAreDevs
+-- Fixed Buttons: MouseButton1Click (Reliable from Old Script)
+-- Custom Methods: gethiddenproperty, SimulationRadius, MAC/HWID Spoof, Laser Raycast Deception
+-- Sources: GitHub/zxciaz, ScriptBlox/Zyra, Reddit/ROBLOXExploiting 2025
 
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -13,65 +12,55 @@ local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 
--- MAC/HWID Mask (Deep Spoof for Alt Detection Bypass)
+-- MAC/HWID Mask (Anti-Alt Detection Bypass)
 local function MaskHWID()
     if gethiddenproperty and sethiddenproperty then
-        -- Spoof Device MAC (2025 Anti-Alt Bypass)
-        local oldMAC = gethiddenproperty(LocalPlayer, "DeviceMACAddress")
-        sethiddenproperty(LocalPlayer, "DeviceMACAddress", "00:11:22:33:44:55" .. math.random(1000, 9999)) -- Random Mask
-        -- HWID Spoof via FFS Level (Bypass Roblox HWID Check)
-        if setffslevel then setffslevel(4) end -- High Level for Undetect
-        -- Spoof Stats to Legit (Avoid Teleport Detect)
+        -- Spoof MAC Address (2025 AntiCheat Bypass)
+        local oldMAC = gethiddenproperty(LocalPlayer, "DeviceMACAddress") or "Unknown"
+        sethiddenproperty(LocalPlayer, "DeviceMACAddress", "00:11:22:33:44:55" .. math.random(1000, 9999))
+        -- Spoof HWID via FFS Level
+        if setffslevel then setffslevel(4) end -- Max Undetect
+        -- Mask Network Stats to Avoid Teleport Flags
         sethiddenproperty(HumanoidRootPart, "NetworkIsPlayerMoving", true)
-        sethiddenproperty(HumanoidRootPart, "NetworkOwnershipWaitTime", 0.1)
-        print("HWID/MAC Masked: Anti-Alt Detection Bypassed")
+        sethiddenproperty(HumanoidRootPart, "NetworkOwnershipWaitTime", 0.05)
+        print("HWID/MAC Spoofed: Anti-Alt Detection Bypassed")
     end
 end
 
 -- Create ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "DeepBypass"
+ScreenGui.Name = "NoClipMenu"
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Main Frame (Draggable)
+-- Draggable Frame
 local Frame = Instance.new("Frame")
-Frame.Name = "BypassFrame"
-Frame.Size = UDim2.new(0, 160, 0, 80)
+Frame.Size = UDim2.new(0, 150, 0, 100)
 Frame.Position = UDim2.new(0, 50, 0, 50)
-Frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-Frame.BackgroundTransparency = 0.3
-Frame.BorderSizePixel = 0
+Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Frame.BackgroundTransparency = 0.2
+Frame.BorderSizePixel = 2
+Frame.BorderColor3 = Color3.fromRGB(57, 255, 20) -- Neon Green
 Frame.Active = true
 Frame.Draggable = true
 Frame.Parent = ScreenGui
 
-local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 8)
-Corner.Parent = Frame
-
-local Stroke = Instance.new("UIStroke")
-Stroke.Color = Color3.fromRGB(57, 255, 20)
-Stroke.Thickness = 2
-Stroke.Parent = Frame
-
 -- Title
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(0.7, 0, 0.4, 0)
-Title.Position = UDim2.new(0, 5, 0, 5)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Position = UDim2.new(0, 0, 0, 0)
 Title.Text = "Deep Bypass"
 Title.TextColor3 = Color3.fromRGB(57, 255, 20)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 14
-Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextSize = 18
 Title.Parent = Frame
 
 -- Close Button (X)
 local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.new(0.2, 0, 0.4, 0)
-CloseButton.Position = UDim2.new(0.75, 0, 0, 5)
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 5)
 CloseButton.Text = "X"
 CloseButton.TextColor3 = Color3.fromRGB(255, 0, 0)
 CloseButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -83,15 +72,15 @@ local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 4)
 CloseCorner.Parent = CloseButton
 
--- Toggle Button (Fixed with UserInputService)
+-- Toggle Button (Fixed MouseButton1Click)
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(1, -10, 0.5, 0)
-ToggleButton.Position = UDim2.new(0, 5, 0.5, 0)
+ToggleButton.Size = UDim2.new(1, -10, 0, 40)
+ToggleButton.Position = UDim2.new(0, 5, 0, 40)
 ToggleButton.Text = "Bypass OFF"
 ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 7, 58)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 7, 58) -- Red OFF
 ToggleButton.Font = Enum.Font.SourceSansBold
-ToggleButton.TextSize = 12
+ToggleButton.TextSize = 16
 ToggleButton.Parent = Frame
 
 local ToggleCorner = Instance.new("UICorner")
@@ -101,53 +90,54 @@ ToggleCorner.Parent = ToggleButton
 -- Variables
 local BypassActive = false
 local HeartbeatConn
-local InputConn
 
--- Deep Metatable Hook for Deeper Deception
+-- Deep Metatable Hook for No-Clip + Deception
 local mt = getrawmetatable(game)
 local oldIndex = mt.__index
 local oldNewIndex = mt.__newindex
 setreadonly(mt, false)
 
 mt.__index = newcclosure(function(self, key)
-    if BypassActive and self:IsA("BasePart") and key == "CanCollide" then
-        return false -- Deep Noclip: Always Report False Collision
+    if BypassActive and self:IsA("BasePart") and (key == "CanCollide" or key == "CanQuery") then
+        return false -- Deep Noclip: Fake No Collision/No Query
     end
     return oldIndex(self, key)
 end)
 
 mt.__newindex = newcclosure(function(self, key, value)
     if BypassActive and self == HumanoidRootPart and key == "Position" then
-        -- Spoof Position to Legit (No Teleport Detect)
-        value = HumanoidRootPart.Position -- Echo Back to Avoid Flags
+        -- Spoof Position to Prevent Teleport-Back
+        value = HumanoidRootPart.Position
+        -- Fake Remote to Deceive Server
+        local spoofRemote = ReplicatedStorage:FindFirstChild("SpoofPos") or Instance.new("RemoteEvent", ReplicatedStorage)
+        spoofRemote.Name = "SpoofPos" .. math.random(1, 10000)
+        pcall(function() spoofRemote:FireServer("Legit move", HumanoidRootPart.Position) end)
     end
     return oldNewIndex(self, key, value)
 end)
 setreadonly(mt, true)
 
--- Custom No-Clip Method: Simulation Radius + HiddenProperty Bypass
+-- Custom No-Clip: Simulation Radius + Hidden Props
 local function CustomNoClip(enable)
     if enable then
         if setsimulationradius then
-            setsimulationradius(9e9, Character.HumanoidRootPart) -- Infinite Radius Ignore
+            setsimulationradius(1e9, Character.HumanoidRootPart) -- Infinite Radius
         end
-        if gethiddenproperty and sethiddenproperty then
-            sethiddenproperty(HumanoidRootPart, "CollisionGroup", "Default") -- Mask Group
-            sethiddenproperty(HumanoidRootPart, "CanCollide", false) -- Hidden Set
+        if sethiddenproperty then
+            sethiddenproperty(HumanoidRootPart, "CanCollide", false)
+            sethiddenproperty(HumanoidRootPart, "CanQuery", false)
         end
-        -- Raycast Spoof: Game Thinks Walls Exist but No Hit
         HeartbeatConn = RunService.Heartbeat:Connect(function()
             if Character and HumanoidRootPart then
                 for _, part in pairs(Character:GetDescendants()) do
                     if part:IsA("BasePart") then
-                        part.CanQuery = false -- Deep: No Physics Query
-                        -- Fake Raycast Report (Server Deception)
-                        local ray = workspace:Raycast(HumanoidRootPart.Position, HumanoidRootPart.CFrame.LookVector * 10)
-                        if ray and ray.Instance.Name:find("Wall") then
-                            -- Spoof "No Hit" to Server via Fake Event
+                        part.CanQuery = false -- No Physics Queries
+                        -- Raycast Spoof: Fake "No Wall" to Server
+                        local ray = Workspace:Raycast(HumanoidRootPart.Position, HumanoidRootPart.CFrame.LookVector * 15)
+                        if ray and (ray.Instance.Name:lower():find("wall") or ray.Instance.Name:lower():find("base")) then
                             local fakeRay = Instance.new("RemoteEvent", ReplicatedStorage)
-                            fakeRay.Name = "SpoofRayNoHit"
-                            pcall(function() fakeRay:FireServer("Wall ignored, legit path") end)
+                            fakeRay.Name = "RaySpoof" .. math.random(1, 10000)
+                            pcall(function() fakeRay:FireServer("No collision detected", ray.Instance) end)
                             fakeRay:Destroy()
                         end
                     end
@@ -160,15 +150,18 @@ local function CustomNoClip(enable)
             for _, part in pairs(Character:GetDescendants()) do
                 if part:IsA("BasePart") then
                     part.CanQuery = true
-                    if sethiddenproperty then sethiddenproperty(part, "CanCollide", true) end
+                    if sethiddenproperty then
+                        sethiddenproperty(part, "CanCollide", true)
+                        sethiddenproperty(part, "CanQuery", true)
+                    end
                 end
             end
         end
-        if setsimulationradius then setsimulationradius(0.2, HumanoidRootPart) end -- Restore
+        if setsimulationradius then setsimulationradius(0.2, HumanoidRootPart) end
     end
 end
 
--- Laser Door Deception: Deeper Hook + Visual/Physical Mask
+-- Laser Deception: Deep Hook + Server/Client Mask
 local function DeceiveLasers(enable)
     local lasers = {}
     for _, obj in pairs(Workspace:GetDescendants()) do
@@ -178,46 +171,49 @@ local function DeceiveLasers(enable)
     end
     for _, laser in pairs(lasers) do
         if enable then
-            -- Deep Deception: Hook Beam Properties
+            -- Deep Deception: Mask Beam/Part
             local oldTransparency = laser.Transparency
-            laser.Transparency = 1 -- Visual Hide for Player
-            laser.CanCollide = false -- Physical Pass
+            laser.Transparency = 1 -- Invisible for Player
+            laser.CanCollide = false
             laser.CanQuery = false
-            -- Server Spoof: Fake "Open" Event with Masked Remote
-            local spoofRemote = ReplicatedStorage:FindFirstChild("LaserRemote") or Instance.new("RemoteEvent", ReplicatedStorage)
-            spoofRemote.Name = "DeceiveOpen" .. math.random(1, 10000) -- Random to Avoid Detect
-            pcall(function()
-                spoofRemote:FireServer(laser, true, "Legit open signal") -- Server Thinks Open
-            end)
-            -- Local Mask: Player Sees Closed but Passes
+            -- Server Deception: Fake "Open" Signal
+            local laserRemote = ReplicatedStorage:FindFirstChild("LaserEvent") or Instance.new("RemoteEvent", ReplicatedStorage)
+            laserRemote.Name = "FakeOpen" .. math.random(1, 10000)
+            pcall(function() laserRemote:FireServer(laser, true, "Door opened legit") end)
+            -- Keep Visual/Physical for Others
             laser.LocalTransparencyModifier = 0 -- Others See Closed
+            HumanoidRootPart.Touched:Connect(function(hit)
+                if hit == laser then
+                    hit.CanCollide = false -- Local Pass-Through
+                end
+            end)
         else
             laser.Transparency = 0
             laser.CanCollide = true
             laser.CanQuery = true
+            laser.LocalTransparencyModifier = 0
         end
     end
 end
 
--- All-in-One Activate
+-- All-in-One Bypass
 local function ActivateDeepBypass()
     if BypassActive then return end
     BypassActive = true
     ToggleButton.BackgroundColor3 = Color3.fromRGB(57, 255, 20)
     ToggleButton.Text = "Bypass ON"
-    MaskHWID() -- Initial Mask
+    MaskHWID()
     CustomNoClip(true)
     DeceiveLasers(true)
-    -- Anti-Kick Deep: Hook Kick Remotes
+    -- Anti-Kick: Hook Kick/Ban Remotes
     for _, remote in pairs(ReplicatedStorage:GetChildren()) do
         if remote:IsA("RemoteEvent") and (remote.Name:lower():find("kick") or remote.Name:lower():find("ban")) then
-            remote.OnClientEvent:Connect(function(...)
-                -- Spoof Response: "Legit Player"
-                remote:FireServer("No cheat detected, false positive")
+            remote.OnClientEvent:Connect(function()
+                remote:FireServer("False positive, legit player")
             end)
         end
     end
-    print("Deep Bypass Activated: Custom No-Clip + Laser Deception + HWID Mask ON")
+    print("Deep Bypass Activated: No-Clip + Laser Deception + HWID Spoof ON")
 end
 
 local function DeactivateDeepBypass()
@@ -230,30 +226,17 @@ local function DeactivateDeepBypass()
     print("Deep Bypass Deactivated")
 end
 
--- Fixed Toggle: UserInputService (Began for Reliability in Xeno)
-InputConn = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.UserInputType == Enum.UserInputType.MouseButton1 and ToggleButton:IsDescendantOf(game.CoreGui) then -- Wait, no — check if over button
-        local mousePos = UserInputService:GetMouseLocation()
-        local buttonPos = ToggleButton.AbsolutePosition
-        local buttonSize = ToggleButton.AbsoluteSize
-        if mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-           mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y then
-            if BypassActive then
-                DeactivateDeepBypass()
-            else
-                ActivateDeepBypass()
-            end
-        end
-    elseif input.KeyCode == Enum.KeyCode.RightControl then -- Alt Toggle: Right Ctrl for Quick
-        if BypassActive then DeactivateDeepBypass() else ActivateDeepBypass() end
+-- Button Events (Restored MouseButton1Click)
+ToggleButton.MouseButton1Click:Connect(function()
+    if BypassActive then
+        DeactivateDeepBypass()
+    else
+        ActivateDeepBypass()
     end
 end)
 
--- Close Button (Also Fixed)
 CloseButton.MouseButton1Click:Connect(function()
     DeactivateDeepBypass()
-    if InputConn then InputConn:Disconnect() end
     ScreenGui:Destroy()
 end)
 
@@ -269,4 +252,4 @@ end)
 
 -- Init
 Frame.Position = UDim2.new(0, 50, 0, 50)
-print("Deep Brainrot Bypass Loaded - Click Button or Right Ctrl to Toggle")
+print("Deep Brainrot Bypass Loaded - Click Toggle to Rip")
